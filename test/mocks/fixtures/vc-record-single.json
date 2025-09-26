@@ -1,0 +1,33 @@
+{
+  "recordId": "test-record-123",
+  "thid": "test-thread-123",
+  "role": "Issuer",
+  "subjectId": "did:prism:subject123",
+  "protocolState": "OfferSent",
+  "credentialFormat": "AnonCreds",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "metaRetries": 0,
+  "metaLastFailure": null,
+  "offer": {
+    "credential_preview": {
+      "type": "https://didcomm.org/issue-credential/2.0/credential-preview",
+      "attributes": [
+        {
+          "name": "name",
+          "value": "Test User"
+        },
+        {
+          "name": "age", 
+          "value": "25"
+        }
+      ]
+    },
+    "formats": [
+      {
+        "attach_id": "anoncred-offer",
+        "format": "anoncreds/credential-offer@v1.0"
+      }
+    ]
+  }
+}

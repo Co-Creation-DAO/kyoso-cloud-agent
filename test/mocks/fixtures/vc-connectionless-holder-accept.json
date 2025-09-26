@@ -1,0 +1,20 @@
+{
+  "recordId": "vc-accept-record-456",
+  "thid": "vc-thread-456",
+  "role": "Holder",
+  "subjectId": "did:prism:holder456",
+  "protocolState": "RequestSent", 
+  "credentialFormat": "JWT",
+  "createdAt": "2024-01-01T10:05:00Z",
+  "updatedAt": "2024-01-01T10:05:00Z",
+  "metaRetries": 0,
+  "metaLastFailure": null,
+  "request": {
+    "formats": [
+      {
+        "attach_id": "jwt-request",
+        "format": "jwt/credential-request@v1.0"
+      }
+    ]
+  }
+}

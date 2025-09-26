@@ -1,0 +1,9 @@
+{
+  "connectionId": "test-connection-holder-id-1",
+  "thid": "test-thread-id-1",
+  "label": "VC Issuance Connection",
+  "role": "Invitee",
+  "state": "ConnectionRequestSent",
+  "createdAt": "2024-01-01T10:01:00Z",
+  "updatedAt": "2024-01-01T10:01:00Z"
+}

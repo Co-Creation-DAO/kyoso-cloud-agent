@@ -1,0 +1,20 @@
+{
+  "recordId": "test-record-789",
+  "thid": "test-thread-789",
+  "role": "Holder",
+  "subjectId": "did:prism:subject789",
+  "protocolState": "RequestSent",
+  "credentialFormat": "AnonCreds",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:05:00Z",
+  "metaRetries": 0,
+  "metaLastFailure": null,
+  "request": {
+    "formats": [
+      {
+        "attach_id": "anoncred-request",
+        "format": "anoncreds/credential-request@v1.0"
+      }
+    ]
+  }
+}

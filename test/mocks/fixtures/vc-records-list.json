@@ -1,0 +1,32 @@
+{
+  "contents": [
+    {
+      "recordId": "test-record-1",
+      "thid": "test-thread-1",
+      "role": "Issuer",
+      "subjectId": "did:prism:subject1",
+      "protocolState": "OfferSent",
+      "credentialFormat": "AnonCreds",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z",
+      "metaRetries": 0,
+      "metaLastFailure": null
+    },
+    {
+      "recordId": "test-record-2",
+      "thid": "test-thread-2",
+      "role": "Holder",
+      "subjectId": "did:prism:subject2",
+      "protocolState": "CredentialReceived",
+      "credentialFormat": "JWT",
+      "createdAt": "2024-01-01T10:15:00Z",
+      "updatedAt": "2024-01-01T10:15:00Z",
+      "metaRetries": 0,
+      "metaLastFailure": null
+    }
+  ],
+  "kind": "Collection",
+  "pageOf": "https://example.com/issue-credentials/records",
+  "next": null,
+  "previous": null
+}

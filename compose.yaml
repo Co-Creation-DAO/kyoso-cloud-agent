@@ -1,0 +1,231 @@
+version: '3.8'
+
+configs:
+  caddyfile_dev:
+    content: |-
+      :8080 {
+        # Cloud Agent REST API
+        handle_path /cloud-agent* {
+          reverse_proxy agent-dev:8085
+        }
+        handle_path / {
+          reverse_proxy agent-dev:8085
+        }
+        # Vault UI/API
+        handle_path /vault* {
+          reverse_proxy vault-dev:8200
+        }
+      }
+
+services:
+  # ────────── Caddy リバースプロキシ ──────────
+  caddy-dev:
+    image: caddy:2.7.6-alpine
+    container_name: caddy-dev
+    depends_on:
+      - agent-dev
+      - vault-dev
+    ports:
+      - "8080:8080"
+    configs:
+      - source: caddyfile_dev
+        target: /etc/caddy/Caddyfile
+    restart: always
+
+  # ────────── PostgreSQL 管理ツール ──────────
+  pg-web-dev:
+    image: sosedoff/pgweb:0.14.1
+    container_name: pg-web-dev
+    depends_on:
+      db-agent-dev:
+        condition: service_healthy
+      node-db-dev:
+        condition: service_healthy
+    environment:
+      # 初期接続はシンプルに
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db-agent-dev:5432/agent?sslmode=disable
+      # UI経由で他のDBへの接続を許可
+      - PGWEB_LISTEN_ADDR=0.0.0.0
+    ports:
+      - "8081:8081"
+    restart: always
+
+  # ────────── Identus Cloud Agent (RESTのみ) ──────────
+  agent-dev:
+    image: docker.io/hyperledgeridentus/identus-cloud-agent:1.40.2
+    container_name: agent-dev
+    depends_on:
+      - db-agent-dev
+      - vault-dev
+      - prism-node-dev
+    ports:
+      - "8085:8085"
+    environment:
+      # 1) APIキー認証（HMAC-derived キー用）
+      API_KEY_ENABLED: "true"
+      API_KEY_AUTO_PROVISIONING: "true"
+      API_KEY_SALT: ${AGENT_API_KEY_SALT}
+      ADMIN_TOKEN: ${AGENT_ADMIN_TOKEN}
+
+      # 2) Agent／Connect／Pollux 共通 DB
+      CONNECT_DB_HOST: db-agent-dev
+      CONNECT_DB_PORT: "5432"
+      CONNECT_DB_NAME: connect
+      CONNECT_DB_USER: postgres
+      CONNECT_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      CONNECT_DB_APP_USER: connect-application-user
+      CONNECT_DB_APP_PASSWORD: ${AGENT_DB_APP_PASSWORD}
+
+      POLLUX_DB_HOST: db-agent-dev
+      POLLUX_DB_PORT: "5432"
+      POLLUX_DB_NAME: pollux
+      POLLUX_DB_USER: postgres
+      POLLUX_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      POLLUX_DB_APP_USER: pollux-application-user
+      POLLUX_DB_APP_PASSWORD: ${AGENT_DB_APP_PASSWORD}
+
+      AGENT_DB_HOST: db-agent-dev
+      AGENT_DB_PORT: "5432"
+      AGENT_DB_NAME: agent
+      AGENT_DB_USER: postgres
+      AGENT_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AGENT_DB_APP_USER: agent-application-user
+      AGENT_DB_APP_PASSWORD: ${AGENT_DB_APP_PASSWORD}
+
+      # 3) PRISM Node 連携
+      PRISM_NODE_HOST: prism-node-dev
+      PRISM_NODE_PORT: "50053"
+      PRISM_NODE_USE_PLAIN_TEXT: "true"
+
+      # 4) Vault
+      SECRET_STORAGE_BACKEND: vault
+      VAULT_ADDR: http://vault-dev:8200
+      VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID}
+
+      # 追加の設定
+      REST_SERVICE_URL: http://caddy-dev:8080/cloud-agent
+
+      # 5) HTTP
+      AGENT_HTTP_PORT: "8085"
+
+      # 6) Keycloak 無効
+      KEYCLOAK_ENABLED: "false"
+    restart: always
+
+  # ────────── 共通 DB: Agent／Connect／Pollux ──────────
+  db-agent-dev:
+    image: postgres:13
+    container_name: db-agent-dev
+    environment:
+      POSTGRES_MULTIPLE_DATABASES: pollux,connect,agent
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APPLICATION_USER_PASSWORD: ${AGENT_DB_APP_PASSWORD}
+    volumes:
+      - pg_issuer_dev:/var/lib/postgresql/data
+      - ./postgres/init-script.sh:/docker-entrypoint-initdb.d/init-script.sh:ro
+      - ./postgres/max_conns.sql:/docker-entrypoint-initdb.d/max_conns.sql:ro
+    healthcheck:
+      test: >
+        pg_isready -U postgres -d pollux &&
+        pg_isready -U postgres -d connect &&
+        pg_isready -U postgres -d agent
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    restart: always
+
+  # ────────── Vault (Dev‑Mode) ──────────
+  vault-dev:
+    image: hashicorp/vault:1.15.6
+    container_name: vault-dev
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
+      VAULT_ADDR: http://0.0.0.0:8200
+    command: server -dev -dev-root-token-id="${VAULT_DEV_ROOT_TOKEN_ID}"
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 10s
+      retries: 5
+    restart: always
+
+  # ────────── PRISM Node 用 DB ──────────
+  node-db-dev:
+    image: postgres:13
+    container_name: node-db-dev
+    environment:
+      POSTGRES_MULTIPLE_DATABASES: node_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APPLICATION_USER_PASSWORD: ${NODE_PSQL_PASSWORD}
+    volumes:
+      - pg_node_dev:/var/lib/postgresql/data
+      - ./postgres/init-script.sh:/docker-entrypoint-initdb.d/init-script.sh:ro
+      - ./postgres/max_conns.sql:/docker-entrypoint-initdb.d/max_conns.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d node_db"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    restart: always
+
+  # ────────── PRISM Node (In‑Memory Ledger) ──────────
+  prism-node-dev:
+    image: ghcr.io/input-output-hk/prism-node:2.5.0
+    container_name: prism-node-dev
+    depends_on:
+      node-db-dev:
+        condition: service_healthy
+    environment:
+      NODE_PSQL_DATABASE: node_db
+      NODE_PSQL_HOST: node-db-dev:5432
+      NODE_PSQL_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_PSQL_USERNAME: postgres
+    restart: always
+    volumes:
+      - ./logs:/opt/docker/logs
+    command: >
+      sh -c "mkdir -p /opt/docker/logs &&
+             /opt/docker/bin/node"
+
+  # ────────── Redis ──────────
+  redis-dev:
+    image: 'redis:7.0'
+    container_name: 'redis-dev'
+    ports:
+      - '6379:6379'
+    command: ['redis-server', '--appendonly', 'yes']
+
+
+  # ────────── Redis Commander ──────────
+  redis-commander-dev:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander-dev
+    depends_on:
+      - redis-dev
+    ports:
+      - '8001:8081'
+    environment:
+      - REDIS_HOSTS=local:redis-dev:6379
+    restart: always
+
+  point-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: point
+    ports:
+      - 5433:5432
+    volumes:
+      - point-db-data:/var/lib/postgresql/data
+
+volumes:
+  pg_issuer_dev:
+  pg_node_dev:
+  point-db-data:
+  

@@ -1,0 +1,18 @@
+{
+  "recordId": "vc-offer-record-123",
+  "thid": "vc-thread-123",
+  "role": "Issuer",
+  "subjectId": "did:prism:subject123",
+  "protocolState": "OfferSent",
+  "credentialFormat": "JWT",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "metaRetries": 0,
+  "metaLastFailure": null,
+  "invitation": "eyJAdHlwZSI6Imh0dHBzOi8vZGlkY29tbS5vcmcvb3V0LW9mLWJhbmQvMi4wL2ludml0YXRpb24iLCJAaWQiOiIxMjM0NTY3OCIsImxhYmVsIjoiVkMgT2ZmZXIiLCJnb2FsX2NvZGUiOiJpc3N1ZS12YyIsImFjY2VwdCI6WyJkaWRjb21tL3YyIl0sInNlcnZpY2VzIjpbeyJpZCI6IiNpbmxpbmUtMCIsInR5cGUiOiJkaWQtY29tbXVuaWNhdGlvbiIsInNlcnZpY2VFbmRwb2ludCI6Imh0dHBzOi8vYWdlbnQuZXhhbXBsZS5jb20vZGlkY29tbSIsImFjY2VwdCI6WyJkaWRjb21tL3YyIl0sInJlY2lwaWVudEtleXMiOlsiZGlkOmtleTp6NkFhZjZBNTNEZlJrYUhvSzNFNThyeXhRdGFUaXhtdjdTSjNwYWlaaGNBM0t6NDdGZzNBRzJoUm83UEJrTGN6ayJdfV0sInJlcXVlc3RzflnttGFjaCI6W3siaWQiOiJjcmVkZW50aWFsLW9mZmVyLTEyMyIsInR5cGUiOiJjcmVkZW50aWFsLW9mZmVyIiwibWV0aG9kIjoiaXNzdWVkIiwibGFiZWwiOiJJc3N1ZWQgQ3JlZGVudGlhbCJ9XX0=",
+  "claims": {
+    "name": "Test User",
+    "age": "25",
+    "role": "Developer"
+  }
+}

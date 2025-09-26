@@ -1,0 +1,13 @@
+{
+  "connectionId": "test-connection-id-1",
+  "thid": "test-thread-id-1",
+  "label": "VC Issuance Connection",
+  "role": "Inviter",
+  "state": "InvitationGenerated",
+  "invitation": {
+    "invitationUrl": "https://my.domain.com/path?_oob=test-oob-code-123",
+    "from": "did:prism:issuer123"
+  },
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z"
+}

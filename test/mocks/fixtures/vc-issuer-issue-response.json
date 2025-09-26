@@ -1,0 +1,35 @@
+{
+  "recordId": "test-record-101",
+  "thid": "test-thread-101",
+  "role": "Issuer",
+  "subjectId": "did:prism:subject101",
+  "protocolState": "CredentialSent",
+  "credentialFormat": "AnonCreds",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:10:00Z",
+  "metaRetries": 0,
+  "metaLastFailure": null,
+  "issuedCredentialRaw": {
+    "credential": {
+      "schema_id": "anoncred:schema:123",
+      "cred_def_id": "anoncred:creddef:456",
+      "values": {
+        "name": {
+          "raw": "Test User",
+          "encoded": "27034640024117331033063128044004318218486816931520886405535659934417438781507"
+        },
+        "age": {
+          "raw": "25",
+          "encoded": "25"
+        }
+      },
+      "signature": {
+        "p_credential": {
+          "m_2": "1234567890",
+          "a": "abcdef123456"
+        },
+        "r_credential": null
+      }
+    }
+  }
+}
