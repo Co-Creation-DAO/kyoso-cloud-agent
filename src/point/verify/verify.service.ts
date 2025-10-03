@@ -4,6 +4,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { MerkleService } from '../merkle/merkle.service';
 import { VerifyResponseDto } from './dto/verify.dto';
 import { VerifyStatus } from './dto/verify.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class VerifyService {
@@ -13,6 +14,7 @@ export class VerifyService {
       private readonly transactionService: TransactionService,
       private readonly walletService: WalletService,
       private readonly merkleService: MerkleService,
+      private readonly prismaService: PrismaService,
     ) {}
 
     async verifyTxIds(txIds: string[]): Promise<VerifyResponseDto[]> {
@@ -21,7 +23,9 @@ export class VerifyService {
       for (const txId of txIds) {
         // 1. トランザクションを取得
         this.logger.log(`🔍 Verifying transaction: ${txId}`);
-        const tx = await this.transactionService.findTransactionById(txId);
+        const tx = await this.prismaService.withRlsContext(async (db) => {
+          return this.transactionService.findTransactionById(txId, db);
+        });
         if (!tx) {
           results.push({ txId, status: VerifyStatus.NOT_VERIFIED, transactionHash: '', rootHash: '', label: 0 });
           this.logger.warn(`Transaction not found: ${txId}`);
@@ -29,7 +33,9 @@ export class VerifyService {
         }
 
         // 2. トランザクションのMerkleプルーフを取得
-        const proofs = await this.transactionService.getProofsForTransaction(txId);
+        const proofs = await this.prismaService.withRlsContext(async (db) => {
+          return this.transactionService.getProofsForTransaction(txId, db);
+        });
         if (!proofs || proofs.length === 0) {
           results.push({ txId, status: VerifyStatus.NOT_VERIFIED, transactionHash: '', rootHash: '', label: 0 });
           this.logger.warn(`Proofs not found: ${txId}`);
@@ -37,7 +43,9 @@ export class VerifyService {
         }
 
         // 3. トランザクションのルートハッシュ情報を取得
-        const rootHashData = await this.transactionService.getRootHashForTransaction(txId);
+        const rootHashData = await this.prismaService.withRlsContext(async (db) => {
+          return this.transactionService.getRootHashForTransaction(txId, db);
+        });
         if (!rootHashData) {
           results.push({ txId, status: VerifyStatus.NOT_VERIFIED, transactionHash: '', rootHash: '', label: 0 });
           this.logger.warn(`Root hash not found: ${txId}`);

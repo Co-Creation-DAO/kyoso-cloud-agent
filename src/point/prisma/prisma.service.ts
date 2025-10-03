@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -15,5 +15,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleDestroy() {
     await this.$disconnect();
+  }
+
+  async withRlsContext<T>(
+    runInTx: (tx: Prisma.TransactionClient) => Promise<T>,
+    userId: string = 'system',
+    rlsBypass: 'on' | 'off' = 'on',
+  ): Promise<T> {
+    return this.$transaction(async (tx) => {
+      await tx.$executeRaw`select set_config('app.rls_bypass', ${rlsBypass}, true)`;
+      await tx.$executeRaw`select set_config('app.rls_config.user_id', ${userId}, true)`;
+      return runInTx(tx);
+    });
   }
 }
