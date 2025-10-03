@@ -61,24 +61,24 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --set-secrets API_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_API_KEY:latest \
-            --set-secrets HTTP_TIMEOUT=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_HTTP_TIMEOUT:latest \
-            --set-secrets IDENTUS_CLOUD_AGENT_URL=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_IDENTUS_CLOUD_AGENT_URL:latest \
-            --set-secrets KYOSO_ISSUER_API_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_KYOSO_ISSUER_API_KEY:latest \
-            --set-secrets IDENTUS_API_SALT=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_IDENTUS_API_SALT:latest \
-            --set-secrets REDIS_HOST=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_REDIS_HOST:latest \
-            --set-secrets REDIS_PORT=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_REDIS_PORT:latest \
-            --set-secrets AUTH_MODE=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_AUTH_MODE:latest \
-            --set-secrets FIREBASE_ISSUER=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_ISSUER:latest \
-            --set-secrets FIREBASE_AUDIENCE=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_AUDIENCE:latest \
-            --set-secrets FIREBASE_PROJECT_ID=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_PROJECT_ID:latest \
-            --set-secrets FIREBASE_CLIENT_EMAIL=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_CLIENT_EMAIL:latest \
-            --set-secrets FIREBASE_PRIVATE_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_PRIVATE_KEY:latest \
-            --set-secrets FIREBASE_AUTH_DOMAIN=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_AUTH_DOMAIN:latest \
-            --set-secrets FIREBASE_API_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_API_KEY:latest \
-            --set-secrets BLOCKFROST_PROJECT_ID=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_BLOCKFROST_PROJECT_ID:latest \
-            --set-secrets WALLET_MNEMONIC=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_WALLET_MNEMONIC:latest \
-            --set-secrets POINT_DATABASE_URL=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_POINT_DATABASE_URL:latest
+            --set-secrets API_KEY=DEV_API_KEY:latest \
+            --set-secrets HTTP_TIMEOUT=DEV_HTTP_TIMEOUT:latest \
+            --set-secrets IDENTUS_CLOUD_AGENT_URL=DEV_IDENTUS_CLOUD_AGENT_URL:latest \
+            --set-secrets KYOSO_ISSUER_API_KEY=DEV_KYOSO_ISSUER_API_KEY:latest \
+            --set-secrets IDENTUS_API_SALT=DEV_IDENTUS_API_SALT:latest \
+            --set-secrets REDIS_HOST=DEV_REDIS_HOST:latest \
+            --set-secrets REDIS_PORT=DEV_REDIS_PORT:latest \
+            --set-secrets AUTH_MODE=DEV_AUTH_MODE:latest \
+            --set-secrets FIREBASE_ISSUER=DEV_FIREBASE_ISSUER:latest \
+            --set-secrets FIREBASE_AUDIENCE=DEV_FIREBASE_AUDIENCE:latest \
+            --set-secrets FIREBASE_PROJECT_ID=DEV_FIREBASE_PROJECT_ID:latest \
+            --set-secrets FIREBASE_CLIENT_EMAIL=DEV_FIREBASE_CLIENT_EMAIL:latest \
+            --set-secrets FIREBASE_PRIVATE_KEY=DEV_FIREBASE_PRIVATE_KEY:latest \
+            --set-secrets FIREBASE_AUTH_DOMAIN=DEV_FIREBASE_AUTH_DOMAIN:latest \
+            --set-secrets FIREBASE_API_KEY=DEV_FIREBASE_API_KEY:latest \
+            --set-secrets BLOCKFROST_PROJECT_ID=DEV_BLOCKFROST_PROJECT_ID:latest \
+            --set-secrets WALLET_MNEMONIC=DEV_WALLET_MNEMONIC:latest \
+            --set-secrets POINT_DATABASE_URL=DEV_POINT_DATABASE_URL:latest
 
 
       - name: Verify deployment
