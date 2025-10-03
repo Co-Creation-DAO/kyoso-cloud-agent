@@ -1,0 +1,111 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches: [develop]
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_DEV }}
+  GCP_REGION: ${{ secrets.GCP_REGION_DEV }}
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME_DEV }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+      # - run: npm run lint
+      # - run: npm run test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev --quiet
+
+      - name: Build & Push Image
+        run: |
+          IMAGE="asia-northeast1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          docker build -t $IMAGE .
+          docker push $IMAGE
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image $IMAGE \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-secrets API_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_API_KEY:latest \
+                          HTTP_TIMEOUT=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_HTTP_TIMEOUT:latest \
+                          IDENTUS_CLOUD_AGENT_URL=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_IDENTUS_CLOUD_AGENT_URL:latest \
+                          KYOSO_ISSUER_API_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_KYOSO_ISSUER_API_KEY:latest \
+                          IDENTUS_API_SALT=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_IDENTUS_API_SALT:latest \
+                          REDIS_HOST=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_REDIS_HOST:latest \
+                          REDIS_PORT=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_REDIS_PORT:latest \
+                          AUTH_MODE=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_AUTH_MODE:latest \
+                          FIREBASE_ISSUER=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_ISSUER:latest \
+                          FIREBASE_AUDIENCE=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_AUDIENCE:latest \
+                          FIREBASE_PROJECT_ID=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_PROJECT_ID:latest \
+                          FIREBASE_CLIENT_EMAIL=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_CLIENT_EMAIL:latest \
+                          FIREBASE_PRIVATE_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_PRIVATE_KEY:latest \
+                          FIREBASE_AUTH_DOMAIN=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_AUTH_DOMAIN:latest \
+                          FIREBASE_API_KEY=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_FIREBASE_API_KEY:latest \
+                          BLOCKFROST_PROJECT_ID=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_BLOCKFROST_PROJECT_ID:latest \
+                          WALLET_MNEMONIC=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_WALLET_MNEMONIC:latest \
+                          POINT_DATABASE_URL=projects/${{ env.GCP_PROJECT_ID }}/secrets/DEV_POINT_DATABASE_URL:latest
+
+
+      - name: Verify deployment
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "Service URL: $URL"
+
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+          if [ "$CODE" = "200" ]; then
+            echo "✅ Service is healthy"
+          else
+            echo "❌ Deployment verification failed ($CODE)"
+            exit 1
+          fi
+
+      - name: Post deployment info
+        if: success()
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "🚀 **Deployment Summary**" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Development" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: [$URL]($URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
