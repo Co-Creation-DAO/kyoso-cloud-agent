@@ -37,6 +37,8 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
+.env.dev
+.env.prod
 .env.development.local
 .env.test.local
 .env.production.local
@@ -56,3 +58,6 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 CLAUDE.md
+
+GCP_SA_KEY_DEV.json
+GCP_SA_KEY_PROD.json

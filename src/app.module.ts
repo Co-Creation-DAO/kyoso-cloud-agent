@@ -15,6 +15,7 @@ import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bullmq';
 import {PointModule} from './point/point.module';
 import { CloudAgentModule } from './cloud-agent/cloud-agent.module';
+import { PrismaModule } from './point/prisma/prisma.module';
 
 
 @Module({
@@ -39,6 +40,7 @@ import { CloudAgentModule } from './cloud-agent/cloud-agent.module';
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
       },
     }),
+    PrismaModule,
     PointModule,
     CloudAgentModule,
   ],

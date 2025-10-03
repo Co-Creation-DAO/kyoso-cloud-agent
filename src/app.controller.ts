@@ -9,4 +9,9 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('check-point-db')
+  async checkPointDb(): Promise<{ status: string; message: string }> {
+    return this.appService.checkPointDbConnection();
+  }
 }
