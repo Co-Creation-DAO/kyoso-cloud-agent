@@ -4,12 +4,16 @@ import { Prisma, PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
-    await this.$connect();
-    // Try to set RLS bypass at session level for connection pool
+    // 非ブロッキング: 起動時にDBへ強制接続しない
+    // set_configは最初のクエリでトランザクション内に再設定するため、ここではベストエフォートのみ
     try {
-      await this.$executeRawUnsafe(`SELECT set_config('app.rls_bypass', 'on', false)`);
+      // 接続試行はするが await しないことで起動をブロックしない
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      this.$connect();
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      this.$executeRawUnsafe(`SELECT set_config('app.rls_bypass', 'on', false)`);
     } catch (error) {
-      console.warn('Could not set app.rls_bypass:', error);
+      console.warn('Startup non-blocking init skipped:', error);
     }
   }
 
