@@ -49,7 +49,7 @@ jobs:
 
       - name: Build & Push Image
         run: |
-          IMAGE="asia-northeast1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          IMAGE="asia-northeast1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/kyoso-nestapi-dev/${{ env.SERVICE_NAME }}:${{ github.sha }}"
           docker build -t $IMAGE .
           docker push $IMAGE
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
