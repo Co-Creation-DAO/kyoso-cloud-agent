@@ -1171,10 +1171,10 @@ enum Position {
 
 model MerkleCommit {
   id           String        @id
-  rootHash     String
+  rootHash     String        @map("root_hash")
   label        Int
-  periodStart  DateTime
-  periodEnd    DateTime
+  periodStart  DateTime      @map("period_start")
+  periodEnd    DateTime      @map("period_end")
   committed_at DateTime      @default(now())
   proofs       MerkleProof[]
 
@@ -1184,10 +1184,10 @@ model MerkleCommit {
 model MerkleProof {
   id String @id @default(cuid())
 
-  txId String
+  txId String      @map("tx_id")
   tx   Transaction @relation(fields: [txId], references: [id], onDelete: Cascade)
 
-  commitId String
+  commitId String       @map("commit_id")
   commit   MerkleCommit @relation(fields: [commitId], references: [id], onDelete: Cascade)
 
   index    Int
