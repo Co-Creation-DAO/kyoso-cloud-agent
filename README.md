@@ -134,6 +134,7 @@ cp .env.sample .env
 |----------|------|
 | `BLOCKFROST_PROJECT_ID` | BlockfrostのプロジェクトID（Cardanoブロックチェーンアクセス用） |
 | `WALLET_MNEMONIC` | Cardanoウォレットのニーモニックフレーズ |
+| `CARDANO_NETWORK_ID` | Cardanoネットワーク識別子（0=preprod/testnet, 1=mainnet） |
 | `POINT_DATABASE_URL` | ポイント管理用データベースのURL |
 
 ### インストール手順
@@ -1254,6 +1255,7 @@ cp .env.sample .env
 |----------|-------------|
 | `BLOCKFROST_PROJECT_ID` | Blockfrost project ID for Cardano blockchain access |
 | `WALLET_MNEMONIC` | Cardano wallet mnemonic phrase |
+| `CARDANO_NETWORK_ID` | Cardano network identifier (0=preprod/testnet, 1=mainnet) |
 | `POINT_DATABASE_URL` | Point management database URL |
 
 ### Installation Steps
