@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionDto } from './dto/transaction.dto';
 import { MerkleCommit, MerkleProof } from '@prisma/client';
@@ -14,8 +15,8 @@ export class TransactionService {
      * 未コミットの最古のトランザクションを取得
      * @returns 最古の未コミットトランザクション or null
      */
-    async findOldestUncommittedTransaction() {
-        return this.prisma.transaction.findFirst({
+    async findOldestUncommittedTransaction(db: Prisma.TransactionClient = this.prisma) {
+        return db.transaction.findFirst({
             where: { merkleProofs: { none: {} } },
             orderBy: { createdAt: 'asc' },
         });
@@ -30,8 +31,8 @@ export class TransactionService {
     async findUncommittedTransactionsInPeriod(
         periodStart: Date,
         periodEnd: Date
-    ): Promise<TransactionDto[]> {
-        const txs = await this.prisma.transaction.findMany({
+    , db: Prisma.TransactionClient = this.prisma): Promise<TransactionDto[]> {
+        const txs = await db.transaction.findMany({
             where: {
                 createdAt: { gte: periodStart, lt: periodEnd },
                 merkleProofs: { none: {} },
@@ -61,9 +62,9 @@ export class TransactionService {
      * @param fromTxId - 開始トランザクションID
      * @returns TransactionDto配列
      */
-    async findUncommittedTransactionsFromId(fromTxId: string): Promise<TransactionDto[]> {
+    async findUncommittedTransactionsFromId(fromTxId: string, db: Prisma.TransactionClient = this.prisma): Promise<TransactionDto[]> {
         // まず指定IDのトランザクションを取得して作成日時を取得
-        const fromTx = await this.prisma.transaction.findUnique({
+        const fromTx = await db.transaction.findUnique({
             where: { id: fromTxId },
             select: { createdAt: true },
         });
@@ -74,7 +75,7 @@ export class TransactionService {
         }
 
         // その日時以降の全ての未コミットトランザクションを取得
-        const txs = await this.prisma.transaction.findMany({
+        const txs = await db.transaction.findMany({
             where: {
                 createdAt: { gte: fromTx.createdAt },
                 merkleProofs: { none: {} },
@@ -109,8 +110,8 @@ export class TransactionService {
     async countUncommittedTransactionsInPeriod(
         periodStart: Date,
         periodEnd: Date
-    ): Promise<number> {
-        return this.prisma.transaction.count({
+    , db: Prisma.TransactionClient = this.prisma): Promise<number> {
+        return db.transaction.count({
             where: {
                 createdAt: { gte: periodStart, lt: periodEnd },
                 merkleProofs: { none: {} },
@@ -123,8 +124,8 @@ export class TransactionService {
      * @param txId - トランザクションID
      * @returns TransactionDto or null
      */
-    async findTransactionById(txId: string): Promise<TransactionDto | null> {
-        const tx = await this.prisma.transaction.findUnique({
+    async findTransactionById(txId: string, db: Prisma.TransactionClient = this.prisma): Promise<TransactionDto | null> {
+        const tx = await db.transaction.findUnique({
             where: { id: txId },
             select: {
                 id: true,
@@ -152,8 +153,8 @@ export class TransactionService {
      * 次のMerkle Commitラベル番号を取得
      * @returns 次のラベル番号
      */
-    async getNextCommitLabel(): Promise<number> {
-        const count = await this.prisma.merkleCommit.count();
+    async getNextCommitLabel(db: Prisma.TransactionClient = this.prisma): Promise<number> {
+        const count = await db.merkleCommit.count();
         return count + 1;
     }
 
@@ -161,8 +162,8 @@ export class TransactionService {
      * 最新のMerkle Commitを取得
      * @returns 最新のコミット情報 or null
      */
-    async getLatestCommit() {
-        return this.prisma.merkleCommit.findFirst({
+    async getLatestCommit(db: Prisma.TransactionClient = this.prisma) {
+        return db.merkleCommit.findFirst({
             orderBy: { label: 'desc' },
             select: { periodEnd: true },
         });
@@ -172,8 +173,8 @@ export class TransactionService {
      * Merkle Commitを保存
      * @param commitData - コミットデータ
      */
-    async saveMerkleCommit(commitData: Omit<MerkleCommit, 'committed_at' | 'proofs'>): Promise<void> {
-        await this.prisma.merkleCommit.create({
+    async saveMerkleCommit(commitData: Omit<MerkleCommit, 'committed_at' | 'proofs'>, db: Prisma.TransactionClient = this.prisma): Promise<void> {
+        await db.merkleCommit.create({
             data: commitData,
         });
         this.logger.log(`💾 Merkle commit saved: {commitData.id}`);
@@ -183,10 +184,10 @@ export class TransactionService {
      * Merkle Proofを一括保存
      * @param proofs - プルーフデータの配列
      */
-    async saveMerkleProofs(proofs: Omit<MerkleProof, 'id' | 'tx' | 'commit'>[]): Promise<void> {
+    async saveMerkleProofs(proofs: Omit<MerkleProof, 'id' | 'tx' | 'commit'>[], db: Prisma.TransactionClient = this.prisma): Promise<void> {
         // 1000件ずつバッチ処理（Prismaの制限対応）
         for (let i = 0; i < proofs.length; i += 1000) {
-            await this.prisma.merkleProof.createMany({
+            await db.merkleProof.createMany({
                 data: proofs.slice(i, i + 1000),
             });
         }
@@ -198,9 +199,9 @@ export class TransactionService {
      * @param txId - トランザクションID
      * @returns プルーフの配列 or null
      */
-    async getProofsForTransaction(txId: string): Promise<Array<{ sibling: string }> | null> {
+    async getProofsForTransaction(txId: string, db: Prisma.TransactionClient = this.prisma): Promise<Array<{ sibling: string }> | null> {
         // 1. このtxIdが含まれるコミットを特定
-        const proofRecord = await this.prisma.merkleProof.findFirst({
+        const proofRecord = await db.merkleProof.findFirst({
             where: { txId },
             select: { commitId: true },
         });
@@ -210,7 +211,7 @@ export class TransactionService {
         }
 
         // 2. そのコミット内でのこのtxIdの全プルーフを取得
-        const proofs = await this.prisma.merkleProof.findMany({
+        const proofs = await db.merkleProof.findMany({
             where: {
                 commitId: proofRecord.commitId,
                 txId
@@ -227,9 +228,9 @@ export class TransactionService {
      * @param txId - トランザクションID
      * @returns ルートハッシュとコミットID or null
      */
-    async getRootHashForTransaction(txId: string): Promise<{ commitId: string; rootHash: string } | null> {
+    async getRootHashForTransaction(txId: string, db: Prisma.TransactionClient = this.prisma): Promise<{ commitId: string; rootHash: string } | null> {
         // このtxIdが含まれるコミットとそのルートハッシュを取得
-        const proofWithCommit = await this.prisma.merkleProof.findFirst({
+        const proofWithCommit = await db.merkleProof.findFirst({
             where: { txId },
             include: {
                 commit: {

@@ -5,6 +5,7 @@ import { TransactionService } from '../transaction/transaction.service';
 import { MerkleProof } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CommitDto } from './dto/commit.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class CommitService {
@@ -14,14 +15,17 @@ export class CommitService {
         private readonly merkleService: MerkleService,
         private readonly transactionService: TransactionService,
         private readonly walletService: WalletService,
+        private readonly prismaService: PrismaService,
     ) { }
 
     // 一週間に一回コミット
     @Cron(CronExpression.EVERY_WEEK)
     async commit() : Promise<CommitDto> {
-        // 1. 最古の未コミットトランザクションを取得
+        // 1. 最古の未コミットトランザクションを取得（RLS/GUC付き）
         let commitDto: CommitDto = new CommitDto();
-        const oldestUncommittedTransaction = await this.transactionService.findOldestUncommittedTransaction();
+        const oldestUncommittedTransaction = await this.prismaService.withRlsContext(async (tx) => {
+            return this.transactionService.findOldestUncommittedTransaction(tx);
+        });
 
         //　もし最古の未コミットトランザクションがない場合は終了
         if (!oldestUncommittedTransaction) {
@@ -29,8 +33,10 @@ export class CommitService {
             return commitDto;
         }
 
-        // 2. 最古の未コミットトランザクション以降の全ての未コミットトランザクションを取得
-        const uncommittedTransactions = await this.transactionService.findUncommittedTransactionsFromId(oldestUncommittedTransaction.id);
+        // 2. 最古の未コミットトランザクション以降の全ての未コミットトランザクションを取得（RLS/GUC付き）
+        const uncommittedTransactions = await this.prismaService.withRlsContext(async (tx) => {
+            return this.transactionService.findUncommittedTransactionsFromId(oldestUncommittedTransaction.id, tx);
+        });
 
 
         // 3. トランザクションをメリークルツリーに変換
@@ -39,19 +45,23 @@ export class CommitService {
         // 4. メリークルツリーのルートハッシュを取得
         const rootHash = this.merkleService.getRoot(merkleTree);
 
-        // 5. ラベルを取得
-        const label = await this.transactionService.getNextCommitLabel();
+        // 5. ラベルを取得（RLS/GUC付き）
+        const label = await this.prismaService.withRlsContext(async (tx) => {
+            return this.transactionService.getNextCommitLabel(tx);
+        });
 
-        // 5. メタデータをオンチェーンにコミット
+        // 5. メタデータをオンチェーンにコミット（DB外のI/Oのためトランザクション外）
         const txHash = await this.walletService.commitMetadata(label, rootHash);
 
-        // 6. DBにコミット情報を保存
-        await this.transactionService.saveMerkleCommit({
-            id: txHash,
-            rootHash,
-            label,
-            periodStart: oldestUncommittedTransaction.createdAt,
-            periodEnd: uncommittedTransactions[uncommittedTransactions.length - 1].createdAt,
+        // 6. DBにコミット情報を保存（RLS/GUC付き、同一トランザクションでまとめて保存）
+        await this.prismaService.withRlsContext(async (tx) => {
+            await this.transactionService.saveMerkleCommit({
+                id: txHash,
+                rootHash,
+                label,
+                periodStart: oldestUncommittedTransaction.createdAt,
+                periodEnd: uncommittedTransactions[uncommittedTransactions.length - 1].createdAt,
+            }, tx);
         });
 
         // 7. MerkleProofを作成
@@ -70,8 +80,10 @@ export class CommitService {
         });
 
 
-        // 8. DBにMerkleProofを保存
-        await this.transactionService.saveMerkleProofs(proofArray);
+        // 8. DBにMerkleProofを保存（RLS/GUC付き、バッチで保存）
+        await this.prismaService.withRlsContext(async (tx) => {
+            await this.transactionService.saveMerkleProofs(proofArray, tx);
+        });
 
         const walletAddress = await this.walletService.getChangeAddress();
 
