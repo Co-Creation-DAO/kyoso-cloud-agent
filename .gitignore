@@ -63,3 +63,5 @@ GCP_SA_KEY_DEV.json
 GCP_SA_KEY_PROD.json
 
 db接続-log.md
+
+tmp/
