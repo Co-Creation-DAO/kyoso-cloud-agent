@@ -34,7 +34,7 @@ export class WalletService {
     const words = this.mnemonic.split(' ');
 
     this.wallet = new MeshWallet({
-      networkId: 0, // preprod
+      networkId: Number(this.transactionConf.cardanoNetworkId) as 0 | 1,
       fetcher: this.provider,
       submitter: this.provider,
       key: { type: 'mnemonic', words },
