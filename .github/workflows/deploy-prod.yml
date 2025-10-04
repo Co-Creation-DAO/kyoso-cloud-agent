@@ -78,6 +78,7 @@ jobs:
             --set-secrets FIREBASE_API_KEY=PROD_FIREBASE_API_KEY:latest \
             --set-secrets BLOCKFROST_PROJECT_ID=PROD_BLOCKFROST_PROJECT_ID:latest \
             --set-secrets WALLET_MNEMONIC=PROD_WALLET_MNEMONIC:latest \
+            --set-secrets CARDANO_NETWORK_ID=PROD_CARDANO_NETWORK_ID:latest \
             --set-secrets POINT_DATABASE_URL=PROD_POINT_DATABASE_URL:latest
 
 
