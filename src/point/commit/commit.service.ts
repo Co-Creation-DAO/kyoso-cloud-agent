@@ -81,9 +81,10 @@ export class CommitService {
 
 
         // 8. DBにMerkleProofを保存（RLS/GUC付き、バッチで保存）
+        // 大量のProofを保存するため、タイムアウトを120秒に延長
         await this.prismaService.withRlsContext(async (tx) => {
             await this.transactionService.saveMerkleProofs(proofArray, tx);
-        });
+        }, 'system', 'on', 120000);
 
         const walletAddress = await this.walletService.getChangeAddress();
 
