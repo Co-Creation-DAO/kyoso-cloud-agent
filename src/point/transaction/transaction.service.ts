@@ -173,7 +173,7 @@ export class TransactionService {
      * Merkle Commitを保存
      * @param commitData - コミットデータ
      */
-    async saveMerkleCommit(commitData: Omit<MerkleCommit, 'committed_at' | 'proofs'>, db: Prisma.TransactionClient = this.prisma): Promise<void> {
+    async saveMerkleCommit(commitData: Omit<MerkleCommit, 'committedAt' | 'proofs'>, db: Prisma.TransactionClient = this.prisma): Promise<void> {
         await db.merkleCommit.create({
             data: commitData,
         });
