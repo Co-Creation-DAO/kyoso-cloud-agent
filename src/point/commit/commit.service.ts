@@ -81,10 +81,19 @@ export class CommitService {
 
 
         // 8. DBにMerkleProofを保存（RLS/GUC付き、バッチで保存）
-        // 大量のProofを保存するため、タイムアウトを120秒に延長
-        await this.prismaService.withRlsContext(async (tx) => {
-            await this.transactionService.saveMerkleProofs(proofArray, tx);
-        }, 'system', 'on', 120000);
+        // PgBouncer対策: 各バッチを独立したトランザクションで保存
+        // 長時間のトランザクションはPgBouncerでコネクションが切断されるため
+        const BATCH_SIZE = 1000;
+        for (let i = 0; i < proofArray.length; i += BATCH_SIZE) {
+            const batch = proofArray.slice(i, i + BATCH_SIZE);
+            await this.prismaService.withRlsContext(async (tx) => {
+                await tx.merkleProof.createMany({
+                    data: batch,
+                });
+            }, 'system', 'on', 10000);
+            this.logger.log(`💾 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(proofArray.length / BATCH_SIZE)} saved (${batch.length} proofs)`);
+        }
+        this.logger.log(`✅ All ${proofArray.length} Merkle proofs saved`);
 
         const walletAddress = await this.walletService.getChangeAddress();
 
