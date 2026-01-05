@@ -216,13 +216,25 @@ export class WalletService {
    */
   async getMetadata(txHash: string): Promise<MetadataResponseDto> {
     const projectId = this.transactionConf.blockfrostProjectId;
+    const networkId = Number(this.transactionConf.cardanoNetworkId);
 
-    const metadata = await fetch(`https://cardano-preprod.blockfrost.io/api/v0/txs/${txHash}/metadata`, {
+    // ネットワークIDに基づいてBlockfrost APIエンドポイントを選択
+    // 0 = preprod/testnet, 1 = mainnet
+    const blockfrostBaseUrl = networkId === 1
+      ? 'https://cardano-mainnet.blockfrost.io/api/v0'
+      : 'https://cardano-preprod.blockfrost.io/api/v0';
+
+    const metadata = await fetch(`${blockfrostBaseUrl}/txs/${txHash}/metadata`, {
         headers: {
             'project_id': projectId!
-        }   
+        }
     });
     const metadataJson = await metadata.json();
+
+    if (!metadataJson || !Array.isArray(metadataJson) || metadataJson.length === 0) {
+      throw new HttpException(`メタデータが見つかりません: ${txHash}`, 404);
+    }
+
     const response: MetadataResponseDto = {
       txHash: txHash,
       label: metadataJson[0].label,
