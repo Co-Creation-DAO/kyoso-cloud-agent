@@ -25,11 +25,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     runInTx: (tx: Prisma.TransactionClient) => Promise<T>,
     userId: string = 'system',
     rlsBypass: 'on' | 'off' = 'on',
+    timeout: number = 5000,
   ): Promise<T> {
     return this.$transaction(async (tx) => {
       await tx.$executeRaw`select set_config('app.rls_bypass', ${rlsBypass}, true)`;
       await tx.$executeRaw`select set_config('app.rls_config.user_id', ${userId}, true)`;
       return runInTx(tx);
+    }, {
+      timeout,
+      maxWait: 10000,
     });
   }
 }
